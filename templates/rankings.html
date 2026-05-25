@@ -24,7 +24,7 @@
 
 {% if ranking %}
 <div class="ranking-lista" style="margin-top: 20px;">
-  {% for i, tema in enumerate(ranking) %}
+  {% for tema in ranking %}
   <a href="{{ url_for('tema_detalle', tema_id=tema.id) }}" class="ranking-row">
     <div class="ranking-pos {% if loop.index == 1 %}gold{% elif loop.index == 2 %}silver{% elif loop.index == 3 %}bronze{% endif %}">
       {{ loop.index }}
