@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-title">{{ "Openings" if tipo == "OP" else "Endings" }}</div>
+<div class="page-sub">Todos los temas calificados por el grupo</div>
+
+<div class="tab-bar" style="margin-bottom: 20px;">
+  <a href="{{ url_for('temas', tipo='OP') }}" class="tab {% if tipo == 'OP' %}active{% endif %}">Openings</a>
+  <a href="{{ url_for('temas', tipo='ED') }}" class="tab {% if tipo == 'ED' %}active{% endif %}">Endings</a>
+</div>
+
+<div style="display: flex; justify-content: flex-end; margin-bottom: 16px;">
+  <a href="{{ url_for('agregar') }}" class="btn btn-primary" style="width: auto;">
+    <i class="ti ti-plus"></i> Agregar tema
+  </a>
+</div>
+
+{% if temas %}
+<div class="temas-lista">
+  {% for tema in temas %}
+  <a href="{{ url_for('tema_detalle', tema_id=tema.id) }}" class="tema-row">
+    <div class="tema-tipo {{ 'op' if tema.tipo == 'OP' else 'ed' }}">
+      {{ tema.tipo }}{{ tema.numero }}
+    </div>
+    <div class="tema-info">
+      <div class="tema-anime">{{ tema.anime_nombre }}</div>
+      <div class="tema-cancion">{{ tema.titulo_cancion or 'Sin título' }}</div>
+    </div>
+    <div class="tema-stats">
+      <div class="tema-promedio">{{ tema.promedio or '—' }}</div>
+      <div class="tema-votos">{{ tema.total_ratings }} voto{{ 's' if tema.total_ratings != 1 else '' }}</div>
+    </div>
+    {% if tema.mi_rating %}
+    <div class="tema-mi-rating">Tu nota: <strong>{{ tema.mi_rating }}</strong></div>
+    {% else %}
+    <div class="tema-sin-rating">Sin calificar</div>
+    {% endif %}
+  </a>
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+  <i class="ti ti-music-off"></i>
+  <p>No hay {{ "openings" if tipo == "OP" else "endings" }} aún. <a href="{{ url_for('agregar') }}">Agrega el primero</a></p>
+</div>
+{% endif %}
+{% endblock %}

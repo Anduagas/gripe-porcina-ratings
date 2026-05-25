@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-title">Mi perfil</div>
+<div class="page-sub">Tu información visible para el grupo</div>
+
+<div class="perfil-box">
+  <div class="perfil-header">
+    <div class="avatar lg">
+      {% if usuario.foto_perfil %}
+        <img src="{{ usuario.foto_perfil }}" alt="foto">
+      {% else %}
+        {{ usuario.nombre[0].upper() }}
+      {% endif %}
+    </div>
+    <div class="perfil-info">
+      <h2>{{ usuario.nombre }}</h2>
+      <p>{{ usuario.descripcion or "Sin descripción aún." }}</p>
+    </div>
+  </div>
+
+  {% with msgs = get_flashed_messages(with_categories=true) %}
+    {% for cat, msg in msgs %}
+      <div class="alert alert-{{ cat }}">{{ msg }}</div>
+    {% endfor %}
+  {% endwith %}
+
+  <div class="perfil-actions">
+    <a href="{{ url_for('editar_perfil') }}" class="btn btn-secondary">
+      <i class="ti ti-edit"></i> Editar perfil
+    </a>
+  </div>
+</div>
+{% endblock %}

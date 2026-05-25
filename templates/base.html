@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gripe Porcina 🐷</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+</head>
+<body>
+
+{% if session.usuario %}
+<nav class="navbar">
+  <a href="{{ url_for('index') }}" class="navbar-logo">
+    🐷 GRIPE<span>&nbsp;PORCINA</span>
+  </a>
+  <div class="navbar-right">
+    <span class="navbar-username">{{ session.usuario }}</span>
+    <a href="{{ url_for('perfil') }}" class="avatar">
+      {{ session.usuario[0].upper() }}
+    </a>
+  </div>
+</nav>
+
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Menú</div>
+      <a href="{{ url_for('index') }}" class="sidebar-item {% if request.endpoint == 'index' %}active{% endif %}">
+        <i class="ti ti-home"></i> Inicio
+      </a>
+      <a href="{{ url_for('temas', tipo='OP') }}" class="sidebar-item {% if request.endpoint == 'temas' and request.args.get('tipo', 'OP') == 'OP' %}active{% endif %}">
+        <i class="ti ti-player-play"></i> Openings
+      </a>
+      <a href="{{ url_for('temas', tipo='ED') }}" class="sidebar-item {% if request.endpoint == 'temas' and request.args.get('tipo') == 'ED' %}active{% endif %}">
+        <i class="ti ti-player-pause"></i> Endings
+      </a>
+      <a href="#" class="sidebar-item">
+        <i class="ti ti-chart-bar"></i> Rankings
+      </a>
+      <a href="#" class="sidebar-item">
+        <i class="ti ti-list"></i> Listas
+      </a>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Cuenta</div>
+      <a href="{{ url_for('perfil') }}" class="sidebar-item {% if request.endpoint == 'perfil' or request.endpoint == 'editar_perfil' %}active{% endif %}">
+        <i class="ti ti-user"></i> Perfil
+      </a>
+      <a href="{{ url_for('agregar') }}" class="sidebar-item {% if request.endpoint == 'agregar' %}active{% endif %}">
+        <i class="ti ti-plus"></i> Agregar tema
+      </a>
+      <a href="{{ url_for('logout') }}" class="sidebar-item">
+        <i class="ti ti-logout"></i> Salir
+      </a>
+    </div>
+  </aside>
+
+  <main class="main">
+    {% block content %}{% endblock %}
+  </main>
+</div>
+
+{% else %}
+  {% block auth %}{% endblock %}
+{% endif %}
+
+</body>
+</html>

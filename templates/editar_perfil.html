@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-title">Editar perfil</div>
+<div class="page-sub">Actualiza tu información</div>
+
+<div class="perfil-box">
+  {% with msgs = get_flashed_messages(with_categories=true) %}
+    {% for cat, msg in msgs %}
+      <div class="alert alert-{{ cat }}">{{ msg }}</div>
+    {% endfor %}
+  {% endwith %}
+
+  <form method="POST">
+    <div class="form-group">
+      <label class="form-label">Nombre / Apodo</label>
+      <input class="form-input" type="text" name="nombre" value="{{ usuario.nombre }}" required>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Descripción</label>
+      <textarea class="form-textarea" name="descripcion">{{ usuario.descripcion }}</textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">URL de foto de perfil</label>
+      <input class="form-input" type="text" name="foto_perfil" value="{{ usuario.foto_perfil }}" placeholder="https://...">
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="form-group">
+      <label class="form-label">Contraseña actual <span>(requerida para guardar)</span></label>
+      <input class="form-input" type="password" name="password_actual" required>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Nueva contraseña <span>(dejar vacío para no cambiar)</span></label>
+      <input class="form-input" type="password" name="nueva_password">
+    </div>
+
+    <div class="perfil-actions">
+      <button class="btn btn-primary" type="submit" style="width: auto;">
+        <i class="ti ti-check"></i> Guardar cambios
+      </button>
+      <a href="{{ url_for('perfil') }}" class="btn btn-secondary">Cancelar</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

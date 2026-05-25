@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-title">Inicio</div>
+<div class="page-sub">Actividad reciente del grupo</div>
+
+<div class="stats-row">
+  <div class="stat-card">
+    <div class="stat-num accent">{{ promedio_personal or '—' }}</div>
+    <div class="stat-label">Tu promedio</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-num">{{ total_ratings }}</div>
+    <div class="stat-label">Ratings dados</div>
+  </div>
+</div>
+
+<div class="section-header" style="margin-bottom: 14px;">
+  <div class="section-title">Actividad reciente</div>
+</div>
+
+{% if actividad %}
+  <div class="actividad-lista">
+    {% for r in actividad %}
+    <a href="{{ url_for('tema_detalle', tema_id=r.tema_id) }}" class="actividad-item">
+      <div class="actividad-tipo {{ 'op' if r.temas.tipo == 'OP' else 'ed' }}">
+        {{ r.temas.tipo }}{{ r.temas.numero }}
+      </div>
+      <div class="actividad-info">
+        <div class="actividad-anime">{{ r.temas.anime_nombre }}</div>
+        <div class="actividad-cancion">{{ r.temas.titulo_cancion or 'Sin título' }}</div>
+      </div>
+      <div class="actividad-right">
+        <div class="actividad-score">{{ r.puntuacion }}</div>
+        <div class="actividad-usuario">{{ r.usuarios.nombre }}</div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="empty-state">
+    <i class="ti ti-music-off"></i>
+    <p>Aún no hay calificaciones. <a href="{{ url_for('agregar') }}">Agrega el primer tema</a></p>
+  </div>
+{% endif %}
+{% endblock %}

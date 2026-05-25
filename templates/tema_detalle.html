@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+{% block content %}
+<a href="{{ url_for('temas', tipo=tema.tipo) }}" class="btn btn-secondary" style="margin-bottom: 20px; width: auto;">
+  <i class="ti ti-arrow-left"></i> Volver
+</a>
+
+<div class="detalle-layout">
+
+  <!-- Panel izquierdo: video + info -->
+  <div class="detalle-panel-video">
+    <div class="video-wrapper">
+      {% if tema.spoiler %}
+      <div id="spoiler-warning" class="spoiler-warning">
+        <i class="ti ti-eye-off" style="font-size: 32px; margin-bottom: 8px;"></i>
+        <p>Este video contiene <strong>spoilers</strong></p>
+        <button class="btn btn-secondary" onclick="mostrarVideo()" style="margin-top: 12px; width: auto;">
+          Mostrar de todas formas
+        </button>
+      </div>
+      <video id="video-player" controls preload="metadata" style="width:100%; border-radius:10px; background:#000; display:none;">
+        <source src="{{ tema.video_url }}" type="video/webm">
+      </video>
+      {% else %}
+      <video controls preload="metadata" style="width:100%; border-radius:10px; background:#000;">
+        <source src="{{ tema.video_url }}" type="video/webm">
+      </video>
+      {% endif %}
+    </div>
+
+    <!-- Info del tema -->
+    <div class="detalle-info-box">
+      <div class="detalle-header">
+        <div class="actividad-tipo {{ 'op' if tema.tipo == 'OP' else 'ed' }}">
+          {{ tema.tipo }}{{ tema.numero }}
+        </div>
+        <div>
+          <h1 class="page-title" style="margin-bottom: 2px; font-size: 18px;">{{ tema.anime_nombre }}</h1>
+          <div class="page-sub" style="margin-bottom: 0;">{{ tema.titulo_cancion or 'Sin título' }}</div>
+        </div>
+      </div>
+
+      <!-- Badges -->
+      <div class="badges-row" style="margin-top: 10px;">
+        {% if tema.resolution %}
+          <span class="vbadge res">{{ tema.resolution }}p</span>
+        {% endif %}
+        {% if tema.nc %}
+          <span class="vbadge nc">NC</span>
+        {% endif %}
+        {% if tema.source %}
+          <span class="vbadge src">{{ tema.source }}</span>
+        {% endif %}
+        {% if tema.spoiler %}
+          <span class="vbadge spoiler">SPOILER</span>
+        {% endif %}
+        {% if tema.episodes %}
+          <span class="vbadge lyr">Eps {{ tema.episodes }}</span>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Ratings del grupo -->
+    <div class="detalle-info-box" style="margin-top: 12px;">
+      <div class="section-title" style="margin-bottom: 14px;">
+        Calificaciones del grupo
+        {% if promedio %}
+          <span style="color: var(--accent); margin-left: 10px; font-size: 20px;">{{ promedio }}</span>
+          <span style="color: var(--text-muted); font-size: 12px; font-weight: 400;"> / {{ todos_ratings|length }} voto{{ 's' if todos_ratings|length != 1 else '' }}</span>
+        {% endif %}
+      </div>
+      {% if todos_ratings %}
+      <div class="ratings-lista">
+        {% for r in todos_ratings %}
+        <div class="rating-item">
+          <div class="avatar" style="width:28px; height:28px; font-size:11px; flex-shrink:0;">
+            {{ r.usuarios.nombre[0].upper() }}
+          </div>
+          <span class="rating-nombre">{{ r.usuarios.nombre }}</span>
+          <span class="rating-score">{{ r.puntuacion }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="empty-state" style="padding: 12px 0;">
+        <p>Nadie ha calificado este tema aún. ¡Sé el primero!</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Panel derecho: rating -->
+  <div class="detalle-panel-rating">
+    <div class="rating-box" style="position: sticky; top: 72px;">
+      <div class="section-title" style="margin-bottom: 6px;">Tu calificación</div>
+
+      {% if mi_rating %}
+        <div class="rating-actual">
+          Tu nota actual: <span id="nota-actual-display">{{ mi_rating }}</span>
+        </div>
+      {% else %}
+        <div class="rating-actual" id="nota-actual-display-wrap" style="display:none;">
+          Preseleccionado: <span id="nota-actual-display">—</span>
+        </div>
+      {% endif %}
+
+      {% with msgs = get_flashed_messages(with_categories=true) %}
+        {% for cat, msg in msgs %}
+          <div class="alert alert-{{ cat }}" style="margin-top: 10px;">{{ msg }}</div>
+        {% endfor %}
+      {% endwith %}
+
+      <form method="POST" action="{{ url_for('guardar_rating', tema_id=tema.id) }}" id="rating-form" style="margin-top: 14px;">
+        <div class="rating-grid">
+          {% for n in [1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0, 5.5, 6.0, 6.5, 7.0, 7.5, 8.0, 8.5, 9.0, 9.5, 10.0] %}
+          <label class="rating-option {% if mi_rating == n %}confirmed{% endif %}" data-value="{{ n }}">
+            <input type="radio" name="puntuacion" value="{{ n }}" {% if mi_rating == n %}checked{% endif %}>
+            {{ n|int if n == n|int else n }}
+          </label>
+          {% endfor %}
+        </div>
+
+        <button class="btn btn-primary" type="submit" id="rating-submit-btn"
+          style="width: 100%; margin-top: 16px; opacity: 0.5; pointer-events: none;">
+          <i class="ti ti-check"></i>
+          {{ "Actualizar rating" if mi_rating else "Confirmar rating" }}
+        </button>
+      </form>
+
+      {% if mi_rating %}
+      <div style="text-align: center; margin-top: 10px;">
+        <span style="font-size: 11px; color: var(--text-faint);">Puedes cambiar tu rating seleccionando otro valor</span>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const opciones = document.querySelectorAll('.rating-option');
+  const submitBtn = document.getElementById('rating-submit-btn');
+  const notaDisplay = document.getElementById('nota-actual-display');
+  const notaWrap = document.getElementById('nota-actual-display-wrap');
+  const miRatingActual = {{ mi_rating or 'null' }};
+
+  opciones.forEach(opcion => {
+    opcion.addEventListener('click', function() {
+      const valor = this.dataset.value;
+
+      // Quitar estados anteriores
+      opciones.forEach(o => {
+        o.classList.remove('preselected', 'confirmed');
+      });
+
+      // Marcar como preseleccionado
+      this.classList.add('preselected');
+
+      // Actualizar display
+      if (notaDisplay) notaDisplay.textContent = valor;
+      if (notaWrap) notaWrap.style.display = 'block';
+
+      // Activar botón
+      submitBtn.style.opacity = '1';
+      submitBtn.style.pointerEvents = 'auto';
+    });
+  });
+
+  function mostrarVideo() {
+    document.getElementById('spoiler-warning').style.display = 'none';
+    document.getElementById('video-player').style.display = 'block';
+  }
+</script>
+{% endblock %}
