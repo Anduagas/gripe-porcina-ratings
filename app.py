@@ -8,8 +8,6 @@ load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = os.getenv("FLASK_SECRET_KEY")
-
-# Fix para archivos estáticos en producción
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 
 supabase: Client = create_client(os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_KEY"))
@@ -49,6 +47,7 @@ def login():
             if bcrypt.checkpw(password.encode(), usuario["password_hash"].encode()):
                 session["usuario"] = usuario["nombre"]
                 session["usuario_id"] = str(usuario["id"])
+                session["color_nombre"] = usuario.get("color_nombre", "#ffffff")
                 return redirect(url_for("index"))
             else:
                 error = "Contraseña incorrecta"
@@ -68,14 +67,12 @@ def logout():
 @app.route("/")
 @login_required
 def index():
-    # Actividad reciente: últimos 10 ratings con info de tema y usuario
     ratings = supabase.table("ratings")\
-        .select("*, usuarios(nombre), temas(anime_nombre, tipo, numero, titulo_cancion, video_url)")\
+        .select("*, usuarios(nombre, foto_perfil, color_nombre), temas(anime_nombre, tipo, numero, titulo_cancion, video_url, imagen_url)")\
         .order("updated_at", desc=True)\
         .limit(10)\
         .execute()
 
-    # Stats del usuario actual
     mis_ratings = supabase.table("ratings")\
         .select("puntuacion")\
         .eq("usuario_id", session["usuario_id"])\
@@ -106,7 +103,6 @@ def temas():
         .order("anime_nombre")\
         .execute()
 
-    # Calcular promedio para cada tema
     temas_data = []
     for tema in result.data:
         promedio = calcular_promedio(tema["id"])
@@ -132,12 +128,11 @@ def tema_detalle(tema_id):
     tema = supabase.table("temas").select("*").eq("id", tema_id).execute()
     if not tema.data:
         return redirect(url_for("temas"))
-
     tema = tema.data[0]
     promedio = calcular_promedio(tema_id)
 
     todos_ratings = supabase.table("ratings")\
-        .select("*, usuarios(nombre)")\
+        .select("*, usuarios(nombre, foto_perfil, color_nombre)")\
         .eq("tema_id", tema_id)\
         .order("updated_at", desc=True)\
         .execute()
@@ -164,7 +159,6 @@ def guardar_rating(tema_id):
         flash("Puntuación inválida.", "error")
         return redirect(url_for("tema_detalle", tema_id=tema_id))
 
-    # Upsert: inserta o actualiza si ya existe
     supabase.table("ratings").upsert({
         "tema_id": tema_id,
         "usuario_id": session["usuario_id"],
@@ -176,7 +170,7 @@ def guardar_rating(tema_id):
     return redirect(url_for("tema_detalle", tema_id=tema_id))
 
 
-# ── Buscar y agregar temas (via AnimeThemes API) ───────
+# ── Agregar temas ──────────────────────────────────────
 
 @app.route("/agregar")
 @login_required
@@ -192,19 +186,14 @@ def buscar_anime():
         return jsonify([])
 
     import requests
-
     url = "https://api.animethemes.moe/search"
     params = {
         "q": query,
-        "include[anime]": "animethemes.animethemeentries.videos,animethemes.song",
+        "include[anime]": "animethemes.animethemeentries.videos,animethemes.song,images",
         "page[limit]": 5
     }
 
     resp = requests.get(url, params=params, timeout=8)
-    print(f"URL consultada: {resp.url}")
-    print(f"Status: {resp.status_code}")
-    print(f"Respuesta: {resp.text[:800]}")
-
     if resp.status_code != 200:
         return jsonify([])
 
@@ -212,6 +201,15 @@ def buscar_anime():
     resultados = []
 
     for anime in data.get("search", {}).get("anime", []):
+        imagenes = anime.get("images", [])
+        imagen_url = None
+        for img in imagenes:
+            if img.get("facet") == "Large Cover":
+                imagen_url = img.get("link")
+                break
+        if not imagen_url and imagenes:
+            imagen_url = imagenes[0].get("link")
+
         for tema in anime.get("animethemes", []):
             for entry in tema.get("animethemeentries", []):
                 for video in entry.get("videos", []):
@@ -222,11 +220,21 @@ def buscar_anime():
                         "numero": tema.get("sequence") or 1,
                         "titulo_cancion": tema.get("song", {}).get("title", "") if tema.get("song") else "",
                         "video_url": video["link"],
-                        "basename": video["basename"]
+                        "basename": video["basename"],
+                        "imagen_url": imagen_url or "",
+                        "nc": video.get("nc", False),
+                        "resolution": video.get("resolution"),
+                        "source": video.get("source", ""),
+                        "subbed": video.get("subbed", False),
+                        "lyrics": video.get("lyrics", False),
+                        "spoiler": entry.get("spoiler", False),
+                        "version": entry.get("version") or 1,
+                        "episodes": entry.get("episodes", ""),
+                        "tags": video.get("tags", "")
                     })
 
-    print(f"Resultados: {len(resultados)}")
     return jsonify(resultados)
+
 
 @app.route("/agregar/guardar", methods=["POST"])
 @login_required
@@ -238,6 +246,7 @@ def guardar_tema():
         "numero": int(request.form["numero"]),
         "titulo_cancion": request.form.get("titulo_cancion", "").strip(),
         "video_url": request.form["video_url"].strip(),
+        "imagen_url": request.form.get("imagen_url", "").strip(),
         "nc": request.form.get("nc", "false").lower() == "true",
         "resolution": int(request.form["resolution"]) if request.form.get("resolution") else None,
         "source": request.form.get("source", "").strip(),
@@ -247,21 +256,192 @@ def guardar_tema():
         "agregado_por": session["usuario_id"]
     }
 
+    # Todas las versiones del mismo OP/ED cuentan como el mismo tema
     existe = supabase.table("temas")\
         .select("id")\
         .eq("anime_slug", data["anime_slug"])\
         .eq("tipo", data["tipo"])\
         .eq("numero", data["numero"])\
-        .eq("video_url", data["video_url"])\
         .execute()
 
     if existe.data:
-        flash("Esa versión exacta ya existe en la lista.", "error")
+        flash(f"Ya existe {data['anime_nombre']} {data['tipo']}{data['numero']} en la lista. Las diferentes versiones comparten calificación.", "error")
         return redirect(url_for("agregar"))
 
     supabase.table("temas").insert(data).execute()
     flash(f"{data['anime_nombre']} {data['tipo']}{data['numero']} agregado correctamente.", "success")
     return redirect(url_for("temas"))
+
+
+# ── Rankings ───────────────────────────────────────────
+
+@app.route("/rankings")
+@login_required
+def rankings():
+    filtro = request.args.get("filtro", "promedio")
+    tipo = request.args.get("tipo", "todos")
+    usuario_filtro = request.args.get("usuario", "todos")
+
+    temas_result = supabase.table("temas").select("*").execute()
+    usuarios_result = supabase.table("usuarios").select("id, nombre, color_nombre").execute()
+
+    ranking_data = []
+    for tema in temas_result.data:
+        if tipo != "todos" and tema["tipo"] != tipo:
+            continue
+
+        if usuario_filtro != "todos":
+            ratings = supabase.table("ratings").select("puntuacion, usuario_id")\
+                .eq("tema_id", tema["id"])\
+                .eq("usuario_id", usuario_filtro)\
+                .execute()
+        else:
+            ratings = supabase.table("ratings").select("puntuacion, usuario_id")\
+                .eq("tema_id", tema["id"])\
+                .execute()
+
+        if not ratings.data:
+            continue
+
+        puntuaciones = [r["puntuacion"] for r in ratings.data]
+        promedio = round(sum(puntuaciones) / len(puntuaciones), 1)
+        ranking_data.append({
+            **tema,
+            "promedio": promedio,
+            "total_votos": len(puntuaciones)
+        })
+
+    ranking_data.sort(key=lambda x: x["promedio"], reverse=True)
+
+    return render_template("rankings.html",
+        ranking=ranking_data,
+        filtro=filtro,
+        tipo=tipo,
+        usuario_filtro=usuario_filtro,
+        usuarios=usuarios_result.data
+    )
+
+
+# ── Listas ─────────────────────────────────────────────
+
+@app.route("/listas")
+@login_required
+def listas():
+    todas = supabase.table("listas")\
+        .select("*, usuarios(nombre, foto_perfil, color_nombre)")\
+        .order("created_at", desc=True)\
+        .execute()
+    return render_template("listas.html", listas=todas.data)
+
+
+@app.route("/listas/nueva", methods=["GET", "POST"])
+@login_required
+def nueva_lista():
+    if request.method == "POST":
+        nombre = request.form["nombre"].strip()
+        descripcion = request.form.get("descripcion", "").strip()
+        temas_ids = request.form.getlist("temas_ids")
+
+        lista = supabase.table("listas").insert({
+            "usuario_id": session["usuario_id"],
+            "nombre": nombre,
+            "descripcion": descripcion
+        }).execute()
+
+        lista_id = lista.data[0]["id"]
+        for i, tema_id in enumerate(temas_ids):
+            supabase.table("lista_items").insert({
+                "lista_id": lista_id,
+                "tema_id": tema_id,
+                "orden": i
+            }).execute()
+
+        flash("Lista creada correctamente.", "success")
+        return redirect(url_for("ver_lista", lista_id=lista_id))
+
+    todos_temas = supabase.table("temas").select("*").order("anime_nombre").execute()
+    return render_template("nueva_lista.html", temas=todos_temas.data)
+
+
+@app.route("/listas/<lista_id>")
+@login_required
+def ver_lista(lista_id):
+    lista = supabase.table("listas")\
+        .select("*, usuarios(nombre, foto_perfil, color_nombre)")\
+        .eq("id", lista_id)\
+        .execute()
+    if not lista.data:
+        return redirect(url_for("listas"))
+
+    items = supabase.table("lista_items")\
+        .select("*, temas(*)")\
+        .eq("lista_id", lista_id)\
+        .order("orden")\
+        .execute()
+
+    temas_con_rating = []
+    for item in items.data:
+        tema = item["temas"]
+        mi_rating = supabase.table("ratings").select("puntuacion")\
+            .eq("tema_id", tema["id"])\
+            .eq("usuario_id", session["usuario_id"])\
+            .execute()
+        promedio = calcular_promedio(tema["id"])
+        temas_con_rating.append({
+            **tema,
+            "mi_rating": mi_rating.data[0]["puntuacion"] if mi_rating.data else None,
+            "promedio": promedio
+        })
+
+    return render_template("ver_lista.html",
+        lista=lista.data[0],
+        temas=temas_con_rating
+    )
+
+
+# ── Usuarios ───────────────────────────────────────────
+
+@app.route("/usuarios")
+@login_required
+def usuarios():
+    todos = supabase.table("usuarios")\
+        .select("id, nombre, foto_perfil, descripcion, color_nombre, created_at")\
+        .execute()
+    return render_template("usuarios.html", usuarios=todos.data)
+
+
+@app.route("/usuarios/<usuario_id>")
+@login_required
+def ver_usuario(usuario_id):
+    usuario = supabase.table("usuarios")\
+        .select("id, nombre, foto_perfil, descripcion, color_nombre, created_at")\
+        .eq("id", usuario_id)\
+        .execute()
+    if not usuario.data:
+        return redirect(url_for("usuarios"))
+
+    sus_ratings = supabase.table("ratings")\
+        .select("*, temas(anime_nombre, tipo, numero, titulo_cancion, imagen_url)")\
+        .eq("usuario_id", usuario_id)\
+        .order("updated_at", desc=True)\
+        .execute()
+
+    sus_listas = supabase.table("listas")\
+        .select("*")\
+        .eq("usuario_id", usuario_id)\
+        .execute()
+
+    promedio = None
+    if sus_ratings.data:
+        puntuaciones = [r["puntuacion"] for r in sus_ratings.data]
+        promedio = round(sum(puntuaciones) / len(puntuaciones), 1)
+
+    return render_template("ver_usuario.html",
+        usuario=usuario.data[0],
+        ratings=sus_ratings.data,
+        listas=sus_listas.data,
+        promedio=promedio
+    )
 
 
 # ── Perfil ─────────────────────────────────────────────
@@ -270,8 +450,7 @@ def guardar_tema():
 @login_required
 def perfil():
     datos = supabase.table("usuarios").select("*").eq("id", session["usuario_id"]).execute()
-    usuario = datos.data[0]
-    return render_template("perfil.html", usuario=usuario)
+    return render_template("perfil.html", usuario=datos.data[0])
 
 
 @app.route("/perfil/editar", methods=["GET", "POST"])
@@ -284,6 +463,7 @@ def editar_perfil():
         nuevo_nombre = request.form["nombre"].strip()
         nueva_descripcion = request.form["descripcion"].strip()
         nueva_foto = request.form["foto_perfil"].strip()
+        nuevo_color = request.form.get("color_nombre", "#ffffff").strip()
         password_actual = request.form["password_actual"]
         nueva_password = request.form["nueva_password"].strip()
 
@@ -295,6 +475,7 @@ def editar_perfil():
             "nombre": nuevo_nombre,
             "descripcion": nueva_descripcion,
             "foto_perfil": nueva_foto,
+            "color_nombre": nuevo_color,
         }
 
         if nueva_password:
@@ -310,6 +491,7 @@ def editar_perfil():
 
         supabase.table("usuarios").update(actualizacion).eq("id", session["usuario_id"]).execute()
         session["usuario"] = nuevo_nombre
+        session["color_nombre"] = nuevo_color
         flash("Perfil actualizado correctamente.", "success")
         return redirect(url_for("perfil"))
 

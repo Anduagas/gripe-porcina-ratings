@@ -25,36 +25,39 @@
 <div class="layout">
   <aside class="sidebar">
     <div class="sidebar-section">
-      <div class="sidebar-label">Menú</div>
-      <a href="{{ url_for('index') }}" class="sidebar-item {% if request.endpoint == 'index' %}active{% endif %}">
-        <i class="ti ti-home"></i> Inicio
-      </a>
-      <a href="{{ url_for('temas', tipo='OP') }}" class="sidebar-item {% if request.endpoint == 'temas' and request.args.get('tipo', 'OP') == 'OP' %}active{% endif %}">
-        <i class="ti ti-player-play"></i> Openings
-      </a>
-      <a href="{{ url_for('temas', tipo='ED') }}" class="sidebar-item {% if request.endpoint == 'temas' and request.args.get('tipo') == 'ED' %}active{% endif %}">
-        <i class="ti ti-player-pause"></i> Endings
-      </a>
-      <a href="#" class="sidebar-item">
-        <i class="ti ti-chart-bar"></i> Rankings
-      </a>
-      <a href="#" class="sidebar-item">
-        <i class="ti ti-list"></i> Listas
-      </a>
-    </div>
+  <div class="sidebar-label">Menú</div>
+  <a href="{{ url_for('index') }}" class="sidebar-item {% if request.endpoint == 'index' %}active{% endif %}">
+    <i class="ti ti-home"></i> Inicio
+  </a>
+  <a href="{{ url_for('temas', tipo='OP') }}" class="sidebar-item {% if request.endpoint == 'temas' and request.args.get('tipo', 'OP') == 'OP' %}active{% endif %}">
+    <i class="ti ti-player-play"></i> Openings
+  </a>
+  <a href="{{ url_for('temas', tipo='ED') }}" class="sidebar-item {% if request.endpoint == 'temas' and request.args.get('tipo') == 'ED' %}active{% endif %}">
+    <i class="ti ti-player-pause"></i> Endings
+  </a>
+  <a href="{{ url_for('rankings') }}" class="sidebar-item {% if request.endpoint == 'rankings' %}active{% endif %}">
+    <i class="ti ti-trophy"></i> Rankings
+  </a>
+  <a href="{{ url_for('listas') }}" class="sidebar-item {% if request.endpoint == 'listas' or request.endpoint == 'ver_lista' or request.endpoint == 'nueva_lista' %}active{% endif %}">
+    <i class="ti ti-list"></i> Listas
+  </a>
+  <a href="{{ url_for('usuarios') }}" class="sidebar-item {% if request.endpoint == 'usuarios' or request.endpoint == 'ver_usuario' %}active{% endif %}">
+    <i class="ti ti-users"></i> Usuarios
+  </a>
+</div>
 
-    <div class="sidebar-section">
-      <div class="sidebar-label">Cuenta</div>
-      <a href="{{ url_for('perfil') }}" class="sidebar-item {% if request.endpoint == 'perfil' or request.endpoint == 'editar_perfil' %}active{% endif %}">
-        <i class="ti ti-user"></i> Perfil
-      </a>
-      <a href="{{ url_for('agregar') }}" class="sidebar-item {% if request.endpoint == 'agregar' %}active{% endif %}">
-        <i class="ti ti-plus"></i> Agregar tema
-      </a>
-      <a href="{{ url_for('logout') }}" class="sidebar-item">
-        <i class="ti ti-logout"></i> Salir
-      </a>
-    </div>
+<div class="sidebar-section">
+  <div class="sidebar-label">Cuenta</div>
+  <a href="{{ url_for('perfil') }}" class="sidebar-item {% if request.endpoint == 'perfil' or request.endpoint == 'editar_perfil' %}active{% endif %}">
+    <i class="ti ti-user"></i> Perfil
+  </a>
+  <a href="{{ url_for('agregar') }}" class="sidebar-item {% if request.endpoint == 'agregar' %}active{% endif %}">
+    <i class="ti ti-plus"></i> Agregar tema
+  </a>
+  <a href="{{ url_for('logout') }}" class="sidebar-item">
+    <i class="ti ti-logout"></i> Salir
+  </a>
+</div>
   </aside>
 
   <main class="main">

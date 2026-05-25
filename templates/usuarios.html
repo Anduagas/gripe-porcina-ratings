@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-title">Usuarios</div>
+<div class="page-sub">Todos los miembros de Gripe Porcina</div>
+
+<input class="form-input" type="text" id="buscar-usuario" placeholder="Buscar usuario..." style="max-width:300px; margin-bottom:20px;">
+
+<div class="usuarios-grid" id="usuarios-grid">
+  {% for u in usuarios %}
+  <a href="{{ url_for('ver_usuario', usuario_id=u.id) }}" class="usuario-card">
+    <div class="usuario-card-avatar">
+      {% if u.foto_perfil %}
+        <img src="{{ u.foto_perfil }}" alt="{{ u.nombre }}">
+      {% else %}
+        <span style="color:{{ u.color_nombre or '#ffffff' }}">{{ u.nombre[0].upper() }}</span>
+      {% endif %}
+    </div>
+    <div class="usuario-card-nombre" style="color:{{ u.color_nombre or 'var(--text-primary)' }}">
+      {{ u.nombre }}
+    </div>
+    <div class="usuario-card-desc">{{ u.descripcion or 'Sin descripción' }}</div>
+  </a>
+  {% endfor %}
+</div>
+
+<script>
+document.getElementById('buscar-usuario').addEventListener('input', function() {
+  const q = this.value.toLowerCase();
+  document.querySelectorAll('.usuario-card').forEach(card => {
+    card.style.display = card.textContent.toLowerCase().includes(q) ? 'flex' : 'none';
+  });
+});
+</script>
+{% endblock %}

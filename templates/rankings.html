@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-title">Rankings</div>
+<div class="page-sub">Los temas mejor calificados por el grupo</div>
+
+<div class="filtros-bar">
+  <form method="GET" style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+    <select name="tipo" class="form-input" style="width:auto;">
+      <option value="todos" {% if tipo == 'todos' %}selected{% endif %}>Todos</option>
+      <option value="OP" {% if tipo == 'OP' %}selected{% endif %}>Openings</option>
+      <option value="ED" {% if tipo == 'ED' %}selected{% endif %}>Endings</option>
+    </select>
+    <select name="usuario" class="form-input" style="width:auto;">
+      <option value="todos" {% if usuario_filtro == 'todos' %}selected{% endif %}>Todos los usuarios</option>
+      {% for u in usuarios %}
+      <option value="{{ u.id }}" {% if usuario_filtro == u.id %}selected{% endif %}>{{ u.nombre }}</option>
+      {% endfor %}
+    </select>
+    <button class="btn btn-primary" type="submit" style="width:auto;">
+      <i class="ti ti-filter"></i> Filtrar
+    </button>
+  </form>
+</div>
+
+{% if ranking %}
+<div class="ranking-lista" style="margin-top: 20px;">
+  {% for i, tema in enumerate(ranking) %}
+  <a href="{{ url_for('tema_detalle', tema_id=tema.id) }}" class="ranking-row">
+    <div class="ranking-pos {% if loop.index == 1 %}gold{% elif loop.index == 2 %}silver{% elif loop.index == 3 %}bronze{% endif %}">
+      {{ loop.index }}
+    </div>
+    {% if tema.imagen_url %}
+    <img src="{{ tema.imagen_url }}" class="ranking-img" alt="{{ tema.anime_nombre }}">
+    {% else %}
+    <div class="ranking-img-placeholder">{{ tema.anime_nombre[0] }}</div>
+    {% endif %}
+    <div class="ranking-info">
+      <div class="ranking-anime">{{ tema.anime_nombre }}</div>
+      <div class="ranking-cancion">{{ tema.titulo_cancion or 'Sin título' }}</div>
+      <div style="margin-top:4px;">
+        <span class="actividad-tipo {{ 'op' if tema.tipo == 'OP' else 'ed' }}">{{ tema.tipo }}{{ tema.numero }}</span>
+      </div>
+    </div>
+    <div class="ranking-score-box">
+      <div class="ranking-score">{{ tema.promedio }}</div>
+      <div class="ranking-votos">{{ tema.total_votos }} voto{{ 's' if tema.total_votos != 1 else '' }}</div>
+    </div>
+  </a>
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty-state" style="margin-top:40px;">
+  <i class="ti ti-trophy-off"></i>
+  <p>No hay ratings con estos filtros todavía.</p>
+</div>
+{% endif %}
+{% endblock %}

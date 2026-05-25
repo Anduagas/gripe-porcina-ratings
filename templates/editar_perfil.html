@@ -23,6 +23,23 @@
       <label class="form-label">URL de foto de perfil</label>
       <input class="form-input" type="text" name="foto_perfil" value="{{ usuario.foto_perfil }}" placeholder="https://...">
     </div>
+      <div class="form-group">
+  <label class="form-label">Color de tu nombre</label>
+  <div style="display:flex; align-items:center; gap:12px;">
+    <input type="color" name="color_nombre" value="{{ usuario.color_nombre or '#ffffff' }}"
+           style="width:48px; height:36px; border:none; background:none; cursor:pointer; border-radius:6px;">
+    <span style="font-size:14px; font-weight:500;" id="color-preview"
+          style="color:{{ usuario.color_nombre or '#ffffff' }}">
+      {{ usuario.nombre }}
+    </span>
+  </div>
+</div>
+
+<script>
+document.querySelector('input[type="color"]').addEventListener('input', function() {
+  document.getElementById('color-preview').style.color = this.value;
+});
+</script>
 
     <div class="divider"></div>
 

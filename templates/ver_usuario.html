@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block content %}
+<a href="{{ url_for('usuarios') }}" class="btn btn-secondary" style="margin-bottom:20px; width:auto;">
+  <i class="ti ti-arrow-left"></i> Volver
+</a>
+
+<div class="perfil-box" style="margin-bottom:24px;">
+  <div class="perfil-header">
+    <div class="avatar lg">
+      {% if usuario.foto_perfil %}
+        <img src="{{ usuario.foto_perfil }}" alt="{{ usuario.nombre }}">
+      {% else %}
+        <span style="color:{{ usuario.color_nombre or '#ffffff' }}">{{ usuario.nombre[0].upper() }}</span>
+      {% endif %}
+    </div>
+    <div class="perfil-info">
+      <h2 style="color:{{ usuario.color_nombre or 'var(--text-primary)' }}">{{ usuario.nombre }}</h2>
+      <p>{{ usuario.descripcion or 'Sin descripción aún.' }}</p>
+    </div>
+  </div>
+  <div class="stats-row" style="margin-top:16px;">
+    <div class="stat-card">
+      <div class="stat-num accent">{{ promedio or '—' }}</div>
+      <div class="stat-label">Promedio</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num">{{ ratings|length }}</div>
+      <div class="stat-label">Ratings dados</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num">{{ listas|length }}</div>
+      <div class="stat-label">Listas</div>
+    </div>
+  </div>
+</div>
+
+{% if listas %}
+<div class="section-title" style="margin-bottom:12px;">Listas de {{ usuario.nombre }}</div>
+<div class="temas-lista" style="margin-bottom:28px;">
+  {% for lista in listas %}
+  <a href="{{ url_for('ver_lista', lista_id=lista.id) }}" class="tema-row">
+    <div class="lista-icon"><i class="ti ti-list"></i></div>
+    <div class="tema-info">
+      <div class="tema-anime">{{ lista.nombre }}</div>
+      <div class="tema-cancion">{{ lista.descripcion or 'Sin descripción' }}</div>
+    </div>
+  </a>
+  {% endfor %}
+</div>
+{% endif %}
+
+<div class="section-title" style="margin-bottom:12px;">Calificaciones de {{ usuario.nombre }}</div>
+{% if ratings %}
+<div class="temas-lista">
+  {% for r in ratings %}
+  <a href="{{ url_for('tema_detalle', tema_id=r.tema_id) }}" class="tema-row">
+    {% if r.temas.imagen_url %}
+    <img src="{{ r.temas.imagen_url }}" style="width:42px; height:42px; border-radius:6px; object-fit:cover; flex-shrink:0;">
+    {% endif %}
+    <div class="actividad-tipo {{ 'op' if r.temas.tipo == 'OP' else 'ed' }}">{{ r.temas.tipo }}{{ r.temas.numero }}</div>
+    <div class="tema-info">
+      <div class="tema-anime">{{ r.temas.anime_nombre }}</div>
+      <div class="tema-cancion">{{ r.temas.titulo_cancion or 'Sin título' }}</div>
+    </div>
+    <div class="tema-promedio" style="flex-shrink:0;">{{ r.puntuacion }}</div>
+  </a>
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+  <i class="ti ti-music-off"></i>
+  <p>{{ usuario.nombre }} no ha calificado nada aún.</p>
+</div>
+{% endif %}
+{% endblock %}

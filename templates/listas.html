@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block content %}
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+  <div class="page-title">Listas</div>
+  <a href="{{ url_for('nueva_lista') }}" class="btn btn-primary" style="width:auto;">
+    <i class="ti ti-plus"></i> Nueva lista
+  </a>
+</div>
+<div class="page-sub">Listas creadas por el grupo</div>
+
+{% if listas %}
+<div class="temas-lista">
+  {% for lista in listas %}
+  <a href="{{ url_for('ver_lista', lista_id=lista.id) }}" class="tema-row">
+    <div class="lista-icon"><i class="ti ti-list"></i></div>
+    <div class="tema-info">
+      <div class="tema-anime">{{ lista.nombre }}</div>
+      <div class="tema-cancion">{{ lista.descripcion or 'Sin descripción' }}</div>
+    </div>
+    <div style="text-align:right; flex-shrink:0;">
+      <div style="font-size:13px; font-weight:500;" 
+           {% if lista.usuarios.color_nombre %}style="color:{{ lista.usuarios.color_nombre }}"{% endif %}>
+        {{ lista.usuarios.nombre }}
+      </div>
+    </div>
+  </a>
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty-state" style="margin-top:40px;">
+  <i class="ti ti-list-off"></i>
+  <p>No hay listas aún. <a href="{{ url_for('nueva_lista') }}">Crea la primera</a></p>
+</div>
+{% endif %}
+{% endblock %}

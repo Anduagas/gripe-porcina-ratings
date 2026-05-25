@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block content %}
+<a href="{{ url_for('listas') }}" class="btn btn-secondary" style="margin-bottom:20px; width:auto;">
+  <i class="ti ti-arrow-left"></i> Volver
+</a>
+
+<div class="page-title">{{ lista.nombre }}</div>
+<div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+  <span style="font-size:13px; color:var(--text-muted);">Por</span>
+  <a href="{{ url_for('ver_usuario', usuario_id=lista.usuario_id) }}"
+     style="font-size:13px; font-weight:500; color:{{ lista.usuarios.color_nombre or 'var(--text-secondary)' }}; text-decoration:none;">
+    {{ lista.usuarios.nombre }}
+  </a>
+</div>
+<div class="page-sub">{{ lista.descripcion or 'Sin descripción' }}</div>
+
+{% if temas %}
+<div class="temas-lista">
+  {% for tema in temas %}
+  <a href="{{ url_for('tema_detalle', tema_id=tema.id) }}" class="tema-row">
+    {% if tema.imagen_url %}
+    <img src="{{ tema.imagen_url }}" style="width:42px; height:42px; border-radius:6px; object-fit:cover; flex-shrink:0;">
+    {% endif %}
+    <div class="actividad-tipo {{ 'op' if tema.tipo == 'OP' else 'ed' }}">{{ tema.tipo }}{{ tema.numero }}</div>
+    <div class="tema-info">
+      <div class="tema-anime">{{ tema.anime_nombre }}</div>
+      <div class="tema-cancion">{{ tema.titulo_cancion or 'Sin título' }}</div>
+    </div>
+    <div class="tema-stats">
+      <div class="tema-promedio">{{ tema.promedio or '—' }}</div>
+      <div class="tema-votos">promedio</div>
+    </div>
+    {% if tema.mi_rating %}
+    <div class="tema-mi-rating">Tu nota: <strong>{{ tema.mi_rating }}</strong></div>
+    {% else %}
+    <div class="tema-sin-rating">Sin calificar</div>
+    {% endif %}
+  </a>
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty-state" style="margin-top:40px;">
+  <i class="ti ti-music-off"></i>
+  <p>Esta lista no tiene temas aún.</p>
+</div>
+{% endif %}
+{% endblock %}
