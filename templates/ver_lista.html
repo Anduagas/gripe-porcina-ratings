@@ -5,6 +5,19 @@
 </a>
 
 <div class="page-title">{{ lista.nombre }}</div>
+{% if lista.usuario_id == session.usuario_id %}
+<div style="display:flex; gap:10px; margin-bottom:16px;">
+  <a href="{{ url_for('editar_lista', lista_id=lista.id) }}" class="btn btn-secondary" style="width:auto;">
+    <i class="ti ti-edit"></i> Editar lista
+  </a>
+  <form method="POST" action="{{ url_for('borrar_lista', lista_id=lista.id) }}"
+        onsubmit="return confirm('¿Seguro que quieres borrar esta lista?')">
+    <button class="btn btn-danger" type="submit" style="width:auto;">
+      <i class="ti ti-trash"></i> Borrar lista
+    </button>
+  </form>
+</div>
+{% endif %}
 <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
   <span style="font-size:13px; color:var(--text-muted);">Por</span>
   <a href="{{ url_for('ver_usuario', usuario_id=lista.usuario_id) }}"

@@ -30,9 +30,9 @@
       {{ loop.index }}
     </div>
     {% if tema.imagen_url %}
-    <img src="{{ tema.imagen_url }}" class="ranking-img" alt="{{ tema.anime_nombre }}">
+      <img src="{{ tema.imagen_url }}" class="ranking-img" alt="{{ tema.anime_nombre }}">
     {% else %}
-    <div class="ranking-img-placeholder">{{ tema.anime_nombre[0] }}</div>
+      <div class="ranking-img-placeholder">{{ tema.anime_nombre[0] }}</div>
     {% endif %}
     <div class="ranking-info">
       <div class="ranking-anime">{{ tema.anime_nombre }}</div>
@@ -42,7 +42,7 @@
       </div>
     </div>
     <div class="ranking-score-box">
-      <div class="ranking-score">{{ tema.promedio }}</div>
+      <div class="ranking-score" data-rating="{{ tema.promedio }}">{{ tema.promedio }}</div>
       <div class="ranking-votos">{{ tema.total_votos }} voto{{ 's' if tema.total_votos != 1 else '' }}</div>
     </div>
   </a>

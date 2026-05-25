@@ -9,6 +9,35 @@
   <!-- Panel izquierdo: video + info -->
   <div class="detalle-panel-video">
     <div class="video-wrapper">
+        {% if versiones|length > 1 %}
+<div class="versiones-selector">
+  <div class="versiones-label">Versiones disponibles</div>
+  <div class="versiones-lista" id="versiones-lista">
+    {% for v in versiones %}
+    <div class="version-btn {% if v.id == tema.id %}active{% endif %}"
+         data-url="{{ v.video_url }}"
+         data-id="{{ v.id }}"
+         onclick="cambiarVersion(this)">
+      <div class="version-btn-badges">
+        {% if v.resolution %}
+          <span class="vbadge res">{{ v.resolution }}p</span>
+        {% endif %}
+        {% if v.nc %}
+          <span class="vbadge nc">NC</span>
+        {% endif %}
+        {% if v.source %}
+          <span class="vbadge src">{{ v.source }}</span>
+        {% endif %}
+        {% if v.spoiler %}
+          <span class="vbadge spoiler">SPOILER</span>
+        {% endif %}
+      </div>
+      <div class="version-btn-nombre">{{ v.tags or v.id[:8] }}</div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
       {% if tema.spoiler %}
       <div id="spoiler-warning" class="spoiler-warning">
         <i class="ti ti-eye-off" style="font-size: 32px; margin-bottom: 8px;"></i>
@@ -64,7 +93,7 @@
       <div class="section-title" style="margin-bottom: 14px;">
         Calificaciones del grupo
         {% if promedio %}
-          <span style="color: var(--accent); margin-left: 10px; font-size: 20px;">{{ promedio }}</span>
+          <span class="stat-num accent" data-rating="{{ promedio }}">{{ promedio or '—' }}</span>
           <span style="color: var(--text-muted); font-size: 12px; font-weight: 400;"> / {{ todos_ratings|length }} voto{{ 's' if todos_ratings|length != 1 else '' }}</span>
         {% endif %}
       </div>
@@ -76,7 +105,7 @@
             {{ r.usuarios.nombre[0].upper() }}
           </div>
           <span class="rating-nombre">{{ r.usuarios.nombre }}</span>
-          <span class="rating-score">{{ r.puntuacion }}</span>
+          <span class="rating-score" data-rating="{{ r.puntuacion }}">{{ r.puntuacion }}</span>
         </div>
         {% endfor %}
       </div>
@@ -169,5 +198,36 @@
     document.getElementById('spoiler-warning').style.display = 'none';
     document.getElementById('video-player').style.display = 'block';
   }
+    function cambiarVersion(el) {
+  // Quitar active de todos
+  document.querySelectorAll('.version-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+
+  const url = el.dataset.url;
+  const spoiler = el.querySelector('.vbadge.spoiler');
+
+  // Si tiene spoiler mostrar advertencia
+  if (spoiler) {
+    const wrapper = document.querySelector('.video-wrapper');
+    wrapper.innerHTML = `
+      <div class="spoiler-warning">
+        <i class="ti ti-eye-off" style="font-size:32px; margin-bottom:8px;"></i>
+        <p>Esta versión contiene <strong>spoilers</strong></p>
+        <button class="btn btn-secondary" onclick="cargarVideo('${url}')" style="margin-top:12px; width:auto;">
+          Mostrar de todas formas
+        </button>
+      </div>`;
+  } else {
+    cargarVideo(url);
+  }
+}
+
+function cargarVideo(url) {
+  const wrapper = document.querySelector('.video-wrapper');
+  wrapper.innerHTML = `
+    <video controls autoplay preload="metadata" style="width:100%; border-radius:10px; background:#000;">
+      <source src="${url}" type="video/webm">
+    </video>`;
+}
 </script>
 {% endblock %}

@@ -48,6 +48,7 @@ def login():
                 session["usuario"] = usuario["nombre"]
                 session["usuario_id"] = str(usuario["id"])
                 session["color_nombre"] = usuario.get("color_nombre", "#ffffff")
+                session["foto_perfil"] = usuario.get("foto_perfil", "")
                 return redirect(url_for("index"))
             else:
                 error = "Contraseña incorrecta"
@@ -143,13 +144,21 @@ def tema_detalle(tema_id):
         .eq("usuario_id", session["usuario_id"])\
         .execute()
 
+    # Traer otras versiones del mismo OP/ED
+    versiones = supabase.table("temas")\
+        .select("id, video_url, nc, resolution, source, spoiler, tags, basename")\
+        .eq("anime_slug", tema["anime_slug"])\
+        .eq("tipo", tema["tipo"])\
+        .eq("numero", tema["numero"])\
+        .execute()
+
     return render_template("tema_detalle.html",
         tema=tema,
         promedio=promedio,
         todos_ratings=todos_ratings.data,
-        mi_rating=mi_rating.data[0]["puntuacion"] if mi_rating.data else None
+        mi_rating=mi_rating.data[0]["puntuacion"] if mi_rating.data else None,
+        versiones=versiones.data
     )
-
 
 @app.route("/temas/<tema_id>/rating", methods=["POST"])
 @login_required
@@ -253,7 +262,8 @@ def guardar_tema():
         "spoiler": request.form.get("spoiler", "false").lower() == "true",
         "version": int(request.form.get("version") or 1),
         "episodes": request.form.get("episodes", "").strip(),
-        "agregado_por": session["usuario_id"]
+        "agregado_por": session["usuario_id"],
+        "basename": request.form.get("basename", "").strip()
     }
 
     # Todas las versiones del mismo OP/ED cuentan como el mismo tema
@@ -492,11 +502,68 @@ def editar_perfil():
         supabase.table("usuarios").update(actualizacion).eq("id", session["usuario_id"]).execute()
         session["usuario"] = nuevo_nombre
         session["color_nombre"] = nuevo_color
+        session["foto_perfil"] = nueva_foto
         flash("Perfil actualizado correctamente.", "success")
         return redirect(url_for("perfil"))
 
     return render_template("editar_perfil.html", usuario=usuario)
 
+@app.route("/listas/<lista_id>/editar", methods=["GET", "POST"])
+@login_required
+def editar_lista(lista_id):
+    lista = supabase.table("listas").select("*").eq("id", lista_id).execute()
+    if not lista.data:
+        return redirect(url_for("listas"))
+
+    lista = lista.data[0]
+    if lista["usuario_id"] != session["usuario_id"]:
+        flash("No puedes editar una lista que no es tuya.", "error")
+        return redirect(url_for("ver_lista", lista_id=lista_id))
+
+    if request.method == "POST":
+        nombre = request.form["nombre"].strip()
+        descripcion = request.form.get("descripcion", "").strip()
+        temas_ids = request.form.getlist("temas_ids")
+
+        supabase.table("listas").update({
+            "nombre": nombre,
+            "descripcion": descripcion
+        }).eq("id", lista_id).execute()
+
+        # Borrar items actuales y reinsertar
+        supabase.table("lista_items").delete().eq("lista_id", lista_id).execute()
+        for i, tema_id in enumerate(temas_ids):
+            supabase.table("lista_items").insert({
+                "lista_id": lista_id,
+                "tema_id": tema_id,
+                "orden": i
+            }).execute()
+
+        flash("Lista actualizada correctamente.", "success")
+        return redirect(url_for("ver_lista", lista_id=lista_id))
+
+    items_actuales = supabase.table("lista_items")\
+        .select("tema_id")\
+        .eq("lista_id", lista_id)\
+        .execute()
+    temas_en_lista = [i["tema_id"] for i in items_actuales.data]
+    todos_temas = supabase.table("temas").select("*").order("anime_nombre").execute()
+
+    return render_template("editar_lista.html",
+        lista=lista,
+        temas=todos_temas.data,
+        temas_en_lista=temas_en_lista
+    )
+
+
+@app.route("/listas/<lista_id>/borrar", methods=["POST"])
+@login_required
+def borrar_lista(lista_id):
+    lista = supabase.table("listas").select("usuario_id").eq("id", lista_id).execute()
+    if lista.data and lista.data[0]["usuario_id"] == session["usuario_id"]:
+        supabase.table("listas").delete().eq("id", lista_id).execute()
+        flash("Lista eliminada.", "success")
+    return redirect(url_for("listas"))
 
 if __name__ == "__main__":
     app.run(debug=True)

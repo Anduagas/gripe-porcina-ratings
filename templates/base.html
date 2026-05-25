@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
 </head>
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
 <body>
 
 {% if session.usuario %}
@@ -17,8 +18,12 @@
   <div class="navbar-right">
     <span class="navbar-username">{{ session.usuario }}</span>
     <a href="{{ url_for('perfil') }}" class="avatar">
-      {{ session.usuario[0].upper() }}
-    </a>
+  {% if session.foto_perfil %}
+    <img src="{{ session.foto_perfil }}" alt="{{ session.usuario }}">
+  {% else %}
+    <span style="color:{{ session.color_nombre or '#ffffff' }}">{{ session.usuario[0].upper() }}</span>
+  {% endif %}
+</a>
   </div>
 </nav>
 

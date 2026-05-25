@@ -44,6 +44,7 @@
         <input type="hidden" name="spoiler" id="f-spoiler">
         <input type="hidden" name="version" id="f-version">
         <input type="hidden" name="episodes" id="f-episodes">
+          <input type="hidden" name="basename" id="f-basename">
 
         <div class="form-group">
           <label class="form-label">Título de la canción <span>(opcional)</span></label>
@@ -83,7 +84,6 @@
   </div>
 
 </div>
-
 <script>
 async function buscarAnime() {
   const query = document.getElementById('buscar-input').value.trim();
@@ -108,7 +108,6 @@ async function buscarAnime() {
     return;
   }
 
-  // Agrupar por anime + tipo + numero
   const grupos = {};
   data.forEach(r => {
     const key = `${r.anime_slug}__${r.tipo}${r.numero}`;
@@ -118,52 +117,41 @@ async function buscarAnime() {
     grupos[key].versiones.push(r);
   });
 
-  lista.innerHTML = Object.values(grupos).map((g, i) => {
-    const esOP = g.tipo === 'OP';
-    const versiones = g.versiones.map((v, vi) => {
-      const badges = generarBadgesHTML(v);
-      return `
-        <div class="version-item" onclick="seleccionarVersion(${i}, ${vi})">
-          <span class="version-label">${v.tags || v.basename.replace(g.anime_slug, '').replace('.webm','') || 'v' + (vi+1)}</span>
-          <span class="version-badges">${badges}</span>
-        </div>`;
-    }).join('');
+lista.innerHTML = Object.values(grupos).map((g, i) => {
+  const esOP = g.tipo === 'OP';
+  const versiones = g.versiones.map((v, vi) => `
+    <div class="version-item" onclick="seleccionarVersion(${i}, ${vi})">
+      <span class="version-label">${v.tags || v.basename || 'v' + (vi + 1)}</span>
+      <span class="version-badges">${generarBadgesHTML(v)}</span>
+    </div>`).join('');
 
-    return `
-      <div class="grupo-card">
-        <div class="grupo-header" onclick="toggleGrupo(this)">
-          <div style="display:flex; align-items:center; gap:10px;">
-            <div class="actividad-tipo ${esOP ? 'op' : 'ed'}">${g.tipo}${g.numero}</div>
-            <div>
-              <div class="grupo-anime">${g.anime_nombre}</div>
-              <div class="grupo-cancion">${g.titulo_cancion || ''}</div>
-            </div>
-          </div>
-          <div style="display:flex; align-items:center; gap:8px;">
-            <span class="version-count">${g.versiones.length} versión${g.versiones.length > 1 ? 'es' : ''}</span>
-            <i class="ti ti-chevron-down grupo-chevron"></i>
+  const imgHTML = g.imagen_url
+    ? `<img src="${g.imagen_url}" class="tema-portada" alt="${g.anime_nombre}" style="border-radius:0;">`
+    : `<div class="tema-portada-placeholder">🎵</div>`;
+
+  return `
+    <div class="grupo-card">
+      <div class="grupo-header" onclick="toggleGrupo(this)" style="padding:0; overflow:hidden;">
+        ${imgHTML}
+        <div style="display:flex; align-items:center; gap:10px; flex:1; padding: 12px 14px;">
+          <div class="actividad-tipo ${esOP ? 'op' : 'ed'}">${g.tipo}${g.numero}</div>
+          <div>
+            <div class="grupo-anime">${g.anime_nombre}</div>
+            <div class="grupo-cancion">${g.titulo_cancion || ''}</div>
           </div>
         </div>
-        <div class="grupo-versiones" style="display:none;">
-          ${versiones}
+        <div style="display:flex; align-items:center; gap:8px; padding-right:14px; flex-shrink:0;">
+          <span class="version-count">${g.versiones.length} versión${g.versiones.length > 1 ? 'es' : ''}</span>
+          <i class="ti ti-chevron-down grupo-chevron"></i>
         </div>
-      </div>`;
-  }).join('');
+      </div>
+      <div class="grupo-versiones" style="display:none;">${versiones}</div>
+    </div>`;
+}).join('');
 
   window._resultados = data;
   window._grupos = Object.values(grupos);
   contenedor.style.display = 'block';
-}
-
-function generarBadgesHTML(v) {
-  let html = '';
-  if (v.resolution) html += `<span class="vbadge res">${v.resolution}p</span>`;
-  if (v.nc) html += `<span class="vbadge nc">NC</span>`;
-  if (v.source) html += `<span class="vbadge src">${v.source}</span>`;
-  if (v.subbed) html += `<span class="vbadge sub">SUB</span>`;
-  if (v.lyrics) html += `<span class="vbadge lyr">LYR</span>`;
-  if (v.spoiler) html += `<span class="vbadge spoiler">SPOILER</span>`;
-  return html;
 }
 
 function toggleGrupo(header) {
@@ -172,49 +160,6 @@ function toggleGrupo(header) {
   const abierto = versiones.style.display !== 'none';
   versiones.style.display = abierto ? 'none' : 'flex';
   chevron.style.transform = abierto ? '' : 'rotate(180deg)';
-}
-
-function seleccionarVersion(grupoIndex, versionIndex) {
-  const grupo = window._grupos[grupoIndex];
-  const v = grupo.versiones[versionIndex];
-
-  // Llenar form
-  document.getElementById('f-anime_nombre').value = v.anime_nombre;
-  document.getElementById('f-anime_slug').value = v.anime_slug;
-  document.getElementById('f-tipo').value = v.tipo;
-  document.getElementById('f-numero').value = v.numero;
-  document.getElementById('f-video_url').value = v.video_url;
-  document.getElementById('f-nc').value = v.nc || false;
-  document.getElementById('f-resolution').value = v.resolution || '';
-  document.getElementById('f-source').value = v.source || '';
-  document.getElementById('f-spoiler').value = v.spoiler || false;
-  document.getElementById('f-version').value = v.version || 1;
-  document.getElementById('f-episodes').value = v.episodes || '';
-  document.getElementById('f-titulo_cancion').value = v.titulo_cancion || '';
-
-  // Info visual
-  const esOP = v.tipo === 'OP';
-  const tipoBadge = document.getElementById('v-tipo-badge');
-  tipoBadge.textContent = `${v.tipo}${v.numero}`;
-  tipoBadge.className = `actividad-tipo ${esOP ? 'op' : 'ed'}`;
-  document.getElementById('v-anime-nombre').textContent = v.anime_nombre;
-  document.getElementById('v-basename').textContent = v.basename;
-  document.getElementById('v-badges').innerHTML = generarBadgesHTML(v);
-
-  // Video
-  const videoEl = document.getElementById('video-preview');
-  document.getElementById('video-preview-src').src = v.video_url;
-  videoEl.load();
-
-  // Mostrar layout dividido
-  document.getElementById('panel-video').style.display = 'block';
-  document.getElementById('agregar-layout').className = 'agregar-layout-split';
-  document.getElementById('panel-video').scrollIntoView({ behavior: 'smooth', block: 'start' });
-}
-
-function cancelarSeleccion() {
-  document.getElementById('panel-video').style.display = 'none';
-  document.getElementById('agregar-layout').className = 'agregar-layout-single';
 }
 
 document.getElementById('buscar-input').addEventListener('keydown', function(e) {

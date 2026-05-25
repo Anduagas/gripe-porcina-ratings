@@ -20,7 +20,7 @@
   </div>
   <div class="stats-row" style="margin-top:16px;">
     <div class="stat-card">
-      <div class="stat-num accent">{{ promedio or '—' }}</div>
+      <div class="stat-num accent" data-rating="{{ promedio }}">{{ promedio or '—' }}</div>
       <div class="stat-label">Promedio</div>
     </div>
     <div class="stat-card">
@@ -62,7 +62,7 @@
       <div class="tema-anime">{{ r.temas.anime_nombre }}</div>
       <div class="tema-cancion">{{ r.temas.titulo_cancion or 'Sin título' }}</div>
     </div>
-    <div class="tema-promedio" style="flex-shrink:0;">{{ r.puntuacion }}</div>
+    <div class="tema-promedio" data-rating="{{ r.puntuacion }}">{{ r.puntuacion }}</div>
   </a>
   {% endfor %}
 </div>

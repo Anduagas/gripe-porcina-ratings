@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-title">Editar lista</div>
+<div class="page-sub">Modifica el contenido de tu lista</div>
+
+{% with msgs = get_flashed_messages(with_categories=true) %}
+  {% for cat, msg in msgs %}
+    <div class="alert alert-{{ cat }}">{{ msg }}</div>
+  {% endfor %}
+{% endwith %}
+
+<div class="agregar-box">
+  <form method="POST">
+    <div class="form-group">
+      <label class="form-label">Nombre de la lista</label>
+      <input class="form-input" type="text" name="nombre" value="{{ lista.nombre }}" required>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Descripción <span>(opcional)</span></label>
+      <textarea class="form-textarea" name="descripcion">{{ lista.descripcion }}</textarea>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Temas en la lista</label>
+      <input class="form-input" type="text" id="buscar-tema" placeholder="Filtrar temas..." style="margin-bottom:10px;">
+      <div class="temas-checklist">
+        {% for tema in temas %}
+        <label class="tema-check-item">
+          <input type="checkbox" name="temas_ids" value="{{ tema.id }}"
+            {% if tema.id in temas_en_lista %}checked{% endif %}>
+          <div class="actividad-tipo {{ 'op' if tema.tipo == 'OP' else 'ed' }}" style="font-size:10px; padding:2px 6px;">
+            {{ tema.tipo }}{{ tema.numero }}
+          </div>
+          <span>{{ tema.anime_nombre }}</span>
+          <span style="color:var(--text-muted); font-size:11px;">{{ tema.titulo_cancion or '' }}</span>
+        </label>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div style="display:flex; gap:10px; margin-top:20px;">
+      <button class="btn btn-primary" type="submit" style="width:auto;">
+        <i class="ti ti-check"></i> Guardar cambios
+      </button>
+      <a href="{{ url_for('ver_lista', lista_id=lista.id) }}" class="btn btn-secondary">Cancelar</a>
+    </div>
+  </form>
+</div>
+
+<script>
+document.getElementById('buscar-tema').addEventListener('input', function() {
+  const q = this.value.toLowerCase();
+  document.querySelectorAll('.tema-check-item').forEach(item => {
+    item.style.display = item.textContent.toLowerCase().includes(q) ? 'flex' : 'none';
+  });
+});
+</script>
+{% endblock %}

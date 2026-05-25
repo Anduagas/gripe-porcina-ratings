@@ -5,7 +5,7 @@
 
 <div class="stats-row">
   <div class="stat-card">
-    <div class="stat-num accent">{{ promedio_personal or '—' }}</div>
+    <div class="stat-num accent" data-rating="{{ promedio_personal }}">{{ promedio_personal or '—' }}</div>
     <div class="stat-label">Tu promedio</div>
   </div>
   <div class="stat-card">
@@ -32,7 +32,7 @@
     </div>
     <div class="actividad-info">
       <div class="actividad-anime">{{ r.temas.anime_nombre }}</div>
-      <div class="actividad-cancion" style="color: var(--text-muted);">{{ r.temas.titulo_cancion or 'Sin título' }}</div>
+      <div class="actividad-cancion">{{ r.temas.titulo_cancion or 'Sin título' }}</div>
       <div class="actividad-usuario-info">
         <div class="actividad-usuario-avatar">
           {% if r.usuarios.foto_perfil %}
@@ -47,10 +47,15 @@
       </div>
     </div>
     <div class="actividad-right">
-      <div class="actividad-score">{{ r.puntuacion }}</div>
+      <div class="actividad-score" data-rating="{{ r.puntuacion }}">{{ r.puntuacion }}</div>
     </div>
   </a>
   {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+  <i class="ti ti-music-off"></i>
+  <p>Aún no hay calificaciones. <a href="{{ url_for('agregar') }}">Agrega el primer tema</a></p>
 </div>
 {% endif %}
 {% endblock %}
