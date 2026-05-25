@@ -9,6 +9,9 @@ load_dotenv()
 app = Flask(__name__)
 app.secret_key = os.getenv("FLASK_SECRET_KEY")
 
+# Fix para archivos estáticos en producción
+app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
+
 supabase: Client = create_client(os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_KEY"))
 
 
