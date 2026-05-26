@@ -99,7 +99,9 @@
             <div class="pendiente-anime">{{ tema.anime_nombre }}</div>
             <div class="pendiente-cancion">{{ tema.titulo_cancion or 'Sin título' }}</div>
             <div class="pendiente-footer">
-              <span class="pendiente-promedio" data-rating="{{ tema.promedio }}">{{ tema.promedio }}</span>
+              <span class="pendiente-promedio" data-rating="{{ tema.promedio }}">
+                   {{ tema.promedio if tema.promedio is not none else '—' }}
+              </span>
               <span class="pendiente-votos">
                 <span class="votos-num">{{ tema.total_votos }}</span>
                 <span class="votos-total">/10</span>

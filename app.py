@@ -95,7 +95,7 @@ def index():
             .execute()
 
         total_votos = len(ratings_tema.data)
-        if total_votos == 0 or total_votos >= 10:
+        if total_votos >= 10:
             continue
 
         # Excluir si el usuario ya votó
@@ -103,21 +103,24 @@ def index():
         if ya_voto:
             continue
 
-        promedio = round(sum(r["puntuacion"] for r in ratings_tema.data) / total_votos, 1)
+        promedio = round(sum(r["puntuacion"] for r in ratings_tema.data) / total_votos, 1) if total_votos > 0 else None
         pendientes.append({
             **tema,
             "total_votos": total_votos,
             "promedio": promedio
         })
 
-    pendientes.sort(key=lambda x: x["total_votos"], reverse=True)
+    pendientes.sort(key=lambda x: (x["total_votos"] is not None, x["total_votos"]), reverse=True)
+    print(f"Total temas: {len(todos_temas.data)}, Pendientes encontrados: {len(pendientes)}")
+    for p in pendientes:
+        print(f"  - {p['anime_nombre']} {p['tipo']}{p['numero']}: {p['total_votos']} votos")
 
     return render_template("index.html",
         usuario=session["usuario"],
         actividad=ratings.data,
         total_ratings=len(mis_ratings.data),
         promedio_personal=promedio_personal,
-        pendientes=pendientes[:12]
+        pendientes=pendientes[:40]
     )
 
 # ── Temas ──────────────────────────────────────────────
