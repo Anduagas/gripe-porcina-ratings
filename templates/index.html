@@ -14,48 +14,138 @@
   </div>
 </div>
 
-<div class="section-header" style="margin-bottom: 14px;">
-  <div class="section-title">Actividad reciente</div>
+<div class="inicio-layout">
+
+  <!-- Columna izquierda: actividad reciente -->
+  <div class="inicio-actividad">
+    <div class="section-header" style="margin-bottom: 14px;">
+      <div class="section-title">Actividad reciente</div>
+      <button class="btn-colapsar" onclick="toggleSeccion('actividad-body', this)">
+        <i class="ti ti-chevron-up"></i>
+      </button>
+    </div>
+
+    <div id="actividad-body">
+      {% if actividad %}
+      <div class="actividad-lista">
+        {% for r in actividad %}
+        <a href="{{ url_for('tema_detalle', tema_id=r.tema_id) }}" class="actividad-item">
+          {% if r.temas.imagen_url %}
+            <img src="{{ r.temas.imagen_url }}" class="actividad-portada" alt="{{ r.temas.anime_nombre }}">
+          {% else %}
+            <div class="actividad-portada-placeholder">🎵</div>
+          {% endif %}
+          <div class="actividad-tipo {{ 'op' if r.temas.tipo == 'OP' else 'ed' }}">
+            {{ r.temas.tipo }}{{ r.temas.numero }}
+          </div>
+          <div class="actividad-info">
+            <div class="actividad-anime">{{ r.temas.anime_nombre }}</div>
+            <div class="actividad-cancion">{{ r.temas.titulo_cancion or 'Sin título' }}</div>
+            <div class="actividad-usuario-info">
+              <div class="actividad-usuario-avatar">
+                {% if r.usuarios.foto_perfil %}
+                  <img src="{{ r.usuarios.foto_perfil }}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">
+                {% else %}
+                  {{ r.usuarios.nombre[0].upper() }}
+                {% endif %}
+              </div>
+              <span style="font-size:11px; color:{{ r.usuarios.color_nombre or 'var(--text-muted)' }}; font-weight:500;">
+                {{ r.usuarios.nombre }}
+              </span>
+            </div>
+          </div>
+          <div class="actividad-right">
+            <div class="actividad-score" data-rating="{{ r.puntuacion }}">{{ r.puntuacion }}</div>
+          </div>
+        </a>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="empty-state">
+        <i class="ti ti-music-off"></i>
+        <p>Aún no hay calificaciones. <a href="{{ url_for('agregar') }}">Agrega el primer tema</a></p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Columna derecha: pendientes de calificar -->
+  <div class="inicio-pendientes">
+    <div class="section-header" style="margin-bottom: 14px;">
+      <div class="section-title">Pendientes de calificar</div>
+      <button class="btn-colapsar" onclick="toggleSeccion('pendientes-body', this)">
+        <i class="ti ti-chevron-up"></i>
+      </button>
+    </div>
+
+    <div id="pendientes-body">
+      {% if pendientes %}
+      <div class="pendientes-grid">
+        {% for tema in pendientes %}
+        <a href="{{ url_for('tema_detalle', tema_id=tema.id) }}" class="pendiente-card">
+          <div class="pendiente-img-wrapper">
+            {% if tema.imagen_url %}
+              <img src="{{ tema.imagen_url }}" class="pendiente-img" alt="{{ tema.anime_nombre }}">
+            {% else %}
+              <div class="pendiente-img-placeholder">🎵</div>
+            {% endif %}
+            <div class="pendiente-tipo-badge">
+              <span class="actividad-tipo {{ 'op' if tema.tipo == 'OP' else 'ed' }}" style="font-size:10px; padding:2px 7px;">
+                {{ tema.tipo }}{{ tema.numero }}
+              </span>
+            </div>
+          </div>
+          <div class="pendiente-info">
+            <div class="pendiente-anime">{{ tema.anime_nombre }}</div>
+            <div class="pendiente-cancion">{{ tema.titulo_cancion or 'Sin título' }}</div>
+            <div class="pendiente-footer">
+              <span class="pendiente-promedio" data-rating="{{ tema.promedio }}">{{ tema.promedio }}</span>
+              <span class="pendiente-votos">
+                <span class="votos-num">{{ tema.total_votos }}</span>
+                <span class="votos-total">/10</span>
+                <i class="ti ti-user" style="font-size:10px; color:var(--text-faint);"></i>
+              </span>
+            </div>
+          </div>
+        </a>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="empty-state">
+        <i class="ti ti-checks"></i>
+        <p>¡Has calificado todo! No te queda nada pendiente.</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
 </div>
 
-{% if actividad %}
-<div class="actividad-lista">
-  {% for r in actividad %}
-  <a href="{{ url_for('tema_detalle', tema_id=r.tema_id) }}" class="actividad-item">
-    {% if r.temas.imagen_url %}
-      <img src="{{ r.temas.imagen_url }}" class="actividad-portada" alt="{{ r.temas.anime_nombre }}">
-    {% else %}
-      <div class="actividad-portada-placeholder">🎵</div>
-    {% endif %}
-    <div class="actividad-tipo {{ 'op' if r.temas.tipo == 'OP' else 'ed' }}">
-      {{ r.temas.tipo }}{{ r.temas.numero }}
-    </div>
-    <div class="actividad-info">
-      <div class="actividad-anime">{{ r.temas.anime_nombre }}</div>
-      <div class="actividad-cancion">{{ r.temas.titulo_cancion or 'Sin título' }}</div>
-      <div class="actividad-usuario-info">
-        <div class="actividad-usuario-avatar">
-          {% if r.usuarios.foto_perfil %}
-            <img src="{{ r.usuarios.foto_perfil }}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">
-          {% else %}
-            {{ r.usuarios.nombre[0].upper() }}
-          {% endif %}
-        </div>
-        <span style="font-size:11px; color:{{ r.usuarios.color_nombre or 'var(--text-muted)' }}; font-weight:500;">
-          {{ r.usuarios.nombre }}
-        </span>
-      </div>
-    </div>
-    <div class="actividad-right">
-      <div class="actividad-score" data-rating="{{ r.puntuacion }}">{{ r.puntuacion }}</div>
-    </div>
-  </a>
-  {% endfor %}
-</div>
-{% else %}
-<div class="empty-state">
-  <i class="ti ti-music-off"></i>
-  <p>Aún no hay calificaciones. <a href="{{ url_for('agregar') }}">Agrega el primer tema</a></p>
-</div>
-{% endif %}
+<script>
+function toggleSeccion(id, btn) {
+  const el = document.getElementById(id);
+  const icon = btn.querySelector('i');
+  const oculto = el.style.display === 'none';
+  el.style.display = oculto ? 'block' : 'none';
+  icon.style.transform = oculto ? '' : 'rotate(180deg)';
+
+  const layout = document.querySelector('.inicio-layout');
+  const actividadOculta = document.getElementById('actividad-body').style.display === 'none';
+  const pendientesOcultos = document.getElementById('pendientes-body').style.display === 'none';
+
+  if (actividadOculta && !pendientesOcultos) {
+    layout.style.gridTemplateColumns = '240px 1fr';
+    const grid = document.querySelector('.pendientes-grid');
+    if (grid) grid.style.gridTemplateColumns = 'repeat(6, 1fr)';
+  } else if (pendientesOcultos && !actividadOculta) {
+    layout.style.gridTemplateColumns = '1fr 240px';
+    const grid = document.querySelector('.pendientes-grid');
+    if (grid) grid.style.gridTemplateColumns = 'repeat(4, 1fr)';
+  } else {
+    layout.style.gridTemplateColumns = '1fr 480px';
+    const grid = document.querySelector('.pendientes-grid');
+    if (grid) grid.style.gridTemplateColumns = 'repeat(4, 1fr)';
+  }
+}
+</script>
 {% endblock %}

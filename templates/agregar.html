@@ -30,35 +30,38 @@
 
       <div id="v-badges" class="badges-row" style="margin-bottom: 16px;"></div>
 
-      <form method="POST" action="{{ url_for('guardar_tema') }}">
-        <input type="hidden" name="anime_nombre" id="f-anime_nombre">
-        <input type="hidden" name="anime_slug" id="f-anime_slug">
-        <input type="hidden" name="tipo" id="f-tipo">
-        <input type="hidden" name="numero" id="f-numero">
-        <input type="hidden" name="video_url" id="f-video_url">
-        <input type="hidden" name="nc" id="f-nc">
-        <input type="hidden" name="resolution" id="f-resolution">
-        <input type="hidden" name="source" id="f-source">
-        <input type="hidden" name="spoiler" id="f-spoiler">
-        <input type="hidden" name="version" id="f-version">
-        <input type="hidden" name="episodes" id="f-episodes">
-        <input type="hidden" name="basename" id="f-basename">
-        <input type="hidden" name="imagen_url" id="f-imagen_url">
+      <form id="form-agregar" onsubmit="guardarTema(event)">
+  <input type="hidden" name="anime_nombre" id="f-anime_nombre">
+  <input type="hidden" name="anime_slug" id="f-anime_slug">
+  <input type="hidden" name="tipo" id="f-tipo">
+  <input type="hidden" name="numero" id="f-numero">
+  <input type="hidden" name="video_url" id="f-video_url">
+  <input type="hidden" name="nc" id="f-nc">
+  <input type="hidden" name="resolution" id="f-resolution">
+  <input type="hidden" name="source" id="f-source">
+  <input type="hidden" name="spoiler" id="f-spoiler">
+  <input type="hidden" name="version" id="f-version">
+  <input type="hidden" name="episodes" id="f-episodes">
+  <input type="hidden" name="basename" id="f-basename">
+  <input type="hidden" name="imagen_url" id="f-imagen_url">
 
-        <div class="form-group">
-          <label class="form-label">Título de la canción <span>(opcional)</span></label>
-          <input class="form-input" type="text" name="titulo_cancion" id="f-titulo_cancion" placeholder="Ej: Kaikai Kitan">
-        </div>
+  <div class="form-group">
+    <label class="form-label">Título de la canción <span>(opcional)</span></label>
+    <input class="form-input" type="text" name="titulo_cancion" id="f-titulo_cancion" placeholder="Ej: Kaikai Kitan">
+  </div>
 
-        <div style="display: flex; gap: 10px;">
-          <button class="btn btn-primary" type="submit" style="width: auto;">
-            <i class="ti ti-plus"></i> Agregar a la lista
-          </button>
-          <button class="btn btn-secondary" type="button" onclick="cancelarSeleccion()">
-            <i class="ti ti-x"></i> Cancelar
-          </button>
-        </div>
-      </form>
+  <!-- Mensaje de resultado -->
+  <div id="agregar-msg" style="display:none; margin-bottom:12px;"></div>
+
+  <div style="display: flex; gap: 10px;">
+    <button class="btn btn-primary" type="submit" id="agregar-btn" style="width: auto;">
+      <i class="ti ti-plus"></i> Agregar a la lista
+    </button>
+    <button class="btn btn-secondary" type="button" onclick="cancelarSeleccion()">
+      <i class="ti ti-x"></i> Cancelar
+    </button>
+  </div>
+</form>
     </div>
   </div>
 
@@ -165,5 +168,47 @@ function toggleGrupo(header) {
 document.getElementById('buscar-input').addEventListener('keydown', function(e) {
   if (e.key === 'Enter') buscarAnime();
 });
+
+
+    async function guardarTema(e) {
+  e.preventDefault();
+
+  const btn = document.getElementById('agregar-btn');
+  const msg = document.getElementById('agregar-msg');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="ti ti-loader-2"></i> Guardando...';
+  msg.style.display = 'none';
+
+  const form = document.getElementById('form-agregar');
+  const formData = new FormData(form);
+
+  try {
+    const resp = await fetch('/agregar/guardar-ajax', {
+      method: 'POST',
+      body: formData
+    });
+    const data = await resp.json();
+
+    if (data.ok) {
+      msg.style.display = 'block';
+      msg.className = 'alert alert-success';
+      msg.innerHTML = `<i class="ti ti-check"></i> ${data.mensaje}`;
+      btn.innerHTML = '<i class="ti ti-check"></i> Agregado';
+      btn.disabled = true;
+    } else {
+      msg.style.display = 'block';
+      msg.className = 'alert alert-error';
+      msg.innerHTML = `<i class="ti ti-x"></i> ${data.mensaje}`;
+      btn.disabled = false;
+      btn.innerHTML = '<i class="ti ti-plus"></i> Agregar a la lista';
+    }
+  } catch (err) {
+    msg.style.display = 'block';
+    msg.className = 'alert alert-error';
+    msg.innerHTML = 'Error al conectar con el servidor.';
+    btn.disabled = false;
+    btn.innerHTML = '<i class="ti ti-plus"></i> Agregar a la lista';
+  }
+}
 </script>
 {% endblock %}

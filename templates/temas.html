@@ -8,8 +8,14 @@
   <a href="{{ url_for('temas', tipo='ED') }}" class="tab {% if tipo == 'ED' %}active{% endif %}">Endings</a>
 </div>
 
-<div style="display: flex; justify-content: flex-end; margin-bottom: 16px;">
-  <a href="{{ url_for('agregar') }}" class="btn btn-primary" style="width: auto;">
+<div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; gap: 12px;">
+  <div style="display: flex; gap: 8px; flex: 1;">
+    <input class="form-input" type="text" id="buscar-tema" placeholder="Buscar anime o canción..." style="max-width: 340px;">
+    <button class="btn btn-secondary" onclick="limpiarBusqueda()" style="width:auto;">
+      <i class="ti ti-x"></i>
+    </button>
+  </div>
+  <a href="{{ url_for('agregar') }}" class="btn btn-primary" style="width: auto; flex-shrink:0;">
     <i class="ti ti-plus"></i> Agregar tema
   </a>
 </div>
@@ -48,4 +54,43 @@
   <p>No hay {{ "openings" if tipo == "OP" else "endings" }} aún. <a href="{{ url_for('agregar') }}">Agrega el primero</a></p>
 </div>
 {% endif %}
+
+<script>
+const inputBusqueda = document.getElementById('buscar-tema');
+
+inputBusqueda.addEventListener('input', function() {
+  const q = this.value.toLowerCase().trim();
+  const filas = document.querySelectorAll('.tema-row');
+
+  filas.forEach(fila => {
+    const anime = fila.querySelector('.tema-anime')?.textContent.toLowerCase() || '';
+    const cancion = fila.querySelector('.tema-cancion')?.textContent.toLowerCase() || '';
+    const tipo = fila.querySelector('.actividad-tipo')?.textContent.toLowerCase() || '';
+
+    if (!q || anime.includes(q) || cancion.includes(q) || tipo.includes(q)) {
+      fila.style.display = 'flex';
+    } else {
+      fila.style.display = 'none';
+    }
+  });
+
+  const visibles = [...filas].filter(f => f.style.display !== 'none');
+  let noResults = document.getElementById('no-results');
+  if (!noResults) {
+    noResults = document.createElement('div');
+    noResults.id = 'no-results';
+    noResults.className = 'empty-state';
+    noResults.innerHTML = '<i class="ti ti-search-off"></i><p>No se encontraron resultados.</p>';
+    const lista = document.querySelector('.temas-lista');
+    if (lista) lista.after(noResults);
+  }
+  noResults.style.display = visibles.length === 0 ? 'block' : 'none';
+});
+
+function limpiarBusqueda() {
+  inputBusqueda.value = '';
+  inputBusqueda.dispatchEvent(new Event('input'));
+  inputBusqueda.focus();
+}
+</script>
 {% endblock %}

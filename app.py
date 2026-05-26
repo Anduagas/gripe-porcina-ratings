@@ -75,22 +75,50 @@ def index():
         .execute()
 
     mis_ratings = supabase.table("ratings")\
-        .select("puntuacion")\
+        .select("puntuacion, tema_id")\
         .eq("usuario_id", session["usuario_id"])\
         .execute()
 
     promedio_personal = None
+    mis_tema_ids = [r["tema_id"] for r in mis_ratings.data]
     if mis_ratings.data:
         puntuaciones = [r["puntuacion"] for r in mis_ratings.data]
         promedio_personal = round(sum(puntuaciones) / len(puntuaciones), 1)
+
+    # Temas pendientes: con votos pero no todos (menos de 10) y que el usuario no haya votado
+    todos_temas = supabase.table("temas").select("*").execute()
+    pendientes = []
+    for tema in todos_temas.data:
+        ratings_tema = supabase.table("ratings")\
+            .select("puntuacion, usuario_id")\
+            .eq("tema_id", tema["id"])\
+            .execute()
+
+        total_votos = len(ratings_tema.data)
+        if total_votos == 0 or total_votos >= 10:
+            continue
+
+        # Excluir si el usuario ya votó
+        ya_voto = any(r["usuario_id"] == session["usuario_id"] for r in ratings_tema.data)
+        if ya_voto:
+            continue
+
+        promedio = round(sum(r["puntuacion"] for r in ratings_tema.data) / total_votos, 1)
+        pendientes.append({
+            **tema,
+            "total_votos": total_votos,
+            "promedio": promedio
+        })
+
+    pendientes.sort(key=lambda x: x["total_votos"], reverse=True)
 
     return render_template("index.html",
         usuario=session["usuario"],
         actividad=ratings.data,
         total_ratings=len(mis_ratings.data),
-        promedio_personal=promedio_personal
+        promedio_personal=promedio_personal,
+        pendientes=pendientes[:12]
     )
-
 
 # ── Temas ──────────────────────────────────────────────
 
@@ -564,6 +592,51 @@ def borrar_lista(lista_id):
         supabase.table("listas").delete().eq("id", lista_id).execute()
         flash("Lista eliminada.", "success")
     return redirect(url_for("listas"))
+
+@app.route("/agregar/guardar-ajax", methods=["POST"])
+@login_required
+def guardar_tema_ajax():
+    try:
+        data = {
+            "anime_nombre": request.form["anime_nombre"].strip(),
+            "anime_slug": request.form["anime_slug"].strip(),
+            "tipo": request.form["tipo"],
+            "numero": int(request.form["numero"]),
+            "titulo_cancion": request.form.get("titulo_cancion", "").strip(),
+            "video_url": request.form["video_url"].strip(),
+            "imagen_url": request.form.get("imagen_url", "").strip(),
+            "nc": request.form.get("nc", "false").lower() == "true",
+            "resolution": int(request.form["resolution"]) if request.form.get("resolution") else None,
+            "source": request.form.get("source", "").strip(),
+            "spoiler": request.form.get("spoiler", "false").lower() == "true",
+            "version": int(request.form.get("version") or 1),
+            "episodes": request.form.get("episodes", "").strip(),
+            "basename": request.form.get("basename", "").strip(),
+            "tags": request.form.get("tags", "").strip(),
+            "agregado_por": session["usuario_id"]
+        }
+
+        existe = supabase.table("temas")\
+            .select("id")\
+            .eq("anime_slug", data["anime_slug"])\
+            .eq("tipo", data["tipo"])\
+            .eq("numero", data["numero"])\
+            .execute()
+
+        if existe.data:
+            return jsonify({
+                "ok": False,
+                "mensaje": f"{data['anime_nombre']} {data['tipo']}{data['numero']} ya existe en la lista."
+            })
+
+        supabase.table("temas").insert(data).execute()
+        return jsonify({
+            "ok": True,
+            "mensaje": f"{data['anime_nombre']} {data['tipo']}{data['numero']} agregado correctamente."
+        })
+
+    except Exception as ex:
+        return jsonify({"ok": False, "mensaje": str(ex)})
 
 if __name__ == "__main__":
     app.run(debug=True)

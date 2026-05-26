@@ -52,6 +52,15 @@ function seleccionarVersion(grupoIndex, versionIndex) {
   const grupo = window._grupos[grupoIndex];
   const v = grupo.versiones[versionIndex];
 
+  // Resetear estado del botón al seleccionar nueva versión
+const btn = document.getElementById('agregar-btn');
+const msg = document.getElementById('agregar-msg');
+if (btn) {
+  btn.disabled = false;
+  btn.innerHTML = '<i class="ti ti-plus"></i> Agregar a la lista';
+}
+if (msg) msg.style.display = 'none';
+
   document.getElementById('f-anime_nombre').value = v.anime_nombre;
   document.getElementById('f-anime_slug').value = v.anime_slug;
   document.getElementById('f-tipo').value = v.tipo;
