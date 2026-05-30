@@ -1297,3 +1297,30 @@ a:hover { text-decoration: underline; }
 }
 
 .resultado-item:hover { border-color: var(--accent); }
+
+/* ── Filtros ── */
+.filtro-grupo {
+  display: flex;
+  gap: 0;
+  background: var(--bg-secondary);
+  border: 0.5px solid var(--border-light);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.filtro-btn {
+  padding: 7px 14px;
+  font-size: 12px;
+  color: var(--text-muted);
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  border-right: 0.5px solid var(--border-light);
+  transition: background 0.1s, color 0.1s;
+  white-space: nowrap;
+}
+
+.filtro-btn:last-child { border-right: none; }
+.filtro-btn:hover { background: #35373c; color: var(--text-secondary); text-decoration: none; }
+.filtro-btn.active { background: var(--accent-dim); color: var(--accent-text); }

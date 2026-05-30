@@ -128,17 +128,17 @@ def index():
 @app.route("/temas")
 @login_required
 def temas():
-    tipo = request.args.get("tipo", "OP")
-    result = supabase.table("temas")\
-        .select("*")\
-        .eq("tipo", tipo)\
-        .order("anime_nombre")\
-        .execute()
+    tipo = request.args.get("tipo", "todos")
+    orden = request.args.get("orden", "alfabetico")
+
+    query = supabase.table("temas").select("*")
+    if tipo != "todos":
+        query = query.eq("tipo", tipo)
+
+    result = query.order("anime_nombre").execute()
 
     temas_data = []
     for tema in result.data:
-        promedio = calcular_promedio(tema["id"])
-        ratings_count = supabase.table("ratings").select("id", count="exact").eq("tema_id", tema["id"]).execute()
         mi_rating = supabase.table("ratings")\
             .select("puntuacion")\
             .eq("tema_id", tema["id"])\
@@ -146,13 +146,18 @@ def temas():
             .execute()
         temas_data.append({
             **tema,
-            "promedio": promedio,
-            "total_ratings": ratings_count.count,
             "mi_rating": mi_rating.data[0]["puntuacion"] if mi_rating.data else None
         })
 
-    return render_template("temas.html", temas=temas_data, tipo=tipo)
+    # Ordenar
+    if orden == "mejor":
+        temas_data.sort(key=lambda x: x["mi_rating"] or 0, reverse=True)
+    elif orden == "peor":
+        temas_data.sort(key=lambda x: x["mi_rating"] or 999)
+    else:
+        temas_data.sort(key=lambda x: x["anime_nombre"].lower())
 
+    return render_template("temas.html", temas=temas_data, tipo=tipo, orden=orden)
 
 @app.route("/temas/<tema_id>")
 @login_required

@@ -1,20 +1,42 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="page-title">{{ "Openings" if tipo == "OP" else "Endings" }}</div>
-<div class="page-sub">Todos los temas calificados por el grupo</div>
+<div class="page-title">OP & ED</div>
+<div class="page-sub">Tu calificación personal por tema</div>
 
-<div class="tab-bar" style="margin-bottom: 20px;">
-  <a href="{{ url_for('temas', tipo='OP') }}" class="tab {% if tipo == 'OP' %}active{% endif %}">Openings</a>
-  <a href="{{ url_for('temas', tipo='ED') }}" class="tab {% if tipo == 'ED' %}active{% endif %}">Endings</a>
-</div>
+<div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; gap: 12px; flex-wrap: wrap;">
+  <div style="display: flex; gap: 8px; flex-wrap: wrap;">
 
-<div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; gap: 12px;">
-  <div style="display: flex; gap: 8px; flex: 1;">
-    <input class="form-input" type="text" id="buscar-tema" placeholder="Buscar anime o canción..." style="max-width: 340px;">
-    <button class="btn btn-secondary" onclick="limpiarBusqueda()" style="width:auto;">
-      <i class="ti ti-x"></i>
-    </button>
+    <!-- Filtro tipo -->
+    <div class="filtro-grupo">
+      <a href="{{ url_for('temas', tipo='todos', orden=orden) }}"
+         class="filtro-btn {% if tipo == 'todos' %}active{% endif %}">Todos</a>
+      <a href="{{ url_for('temas', tipo='OP', orden=orden) }}"
+         class="filtro-btn {% if tipo == 'OP' %}active{% endif %}">Openings</a>
+      <a href="{{ url_for('temas', tipo='ED', orden=orden) }}"
+         class="filtro-btn {% if tipo == 'ED' %}active{% endif %}">Endings</a>
+    </div>
+
+    <!-- Filtro orden -->
+    <div class="filtro-grupo">
+      <a href="{{ url_for('temas', tipo=tipo, orden='alfabetico') }}"
+         class="filtro-btn {% if orden == 'alfabetico' %}active{% endif %}">
+        <i class="ti ti-sort-az"></i> A-Z
+      </a>
+      <a href="{{ url_for('temas', tipo=tipo, orden='mejor') }}"
+         class="filtro-btn {% if orden == 'mejor' %}active{% endif %}">
+        <i class="ti ti-sort-descending"></i> Mejor nota
+      </a>
+      <a href="{{ url_for('temas', tipo=tipo, orden='peor') }}"
+         class="filtro-btn {% if orden == 'peor' %}active{% endif %}">
+        <i class="ti ti-sort-ascending"></i> Peor nota
+      </a>
+    </div>
+
+    <!-- Búsqueda -->
+    <input class="form-input" type="text" id="buscar-tema"
+           placeholder="Buscar..." style="width: 200px;">
   </div>
+
   <a href="{{ url_for('agregar') }}" class="btn btn-primary" style="width: auto; flex-shrink:0;">
     <i class="ti ti-plus"></i> Agregar tema
   </a>
@@ -29,19 +51,18 @@
     {% else %}
       <div class="tema-portada-placeholder">🎵</div>
     {% endif %}
-    <div class="actividad-tipo {{ 'op' if tema.tipo == 'OP' else 'ed' }}">
+    <div class="actividad-tipo {{ 'op' if tema.tipo == 'OP' else 'ed' }}" style="margin-left: 12px;">
       {{ tema.tipo }}{{ tema.numero }}
     </div>
     <div class="tema-info">
       <div class="tema-anime">{{ tema.anime_nombre }}</div>
       <div class="tema-cancion">{{ tema.titulo_cancion or 'Sin título' }}</div>
     </div>
-    <div class="tema-stats">
-      <div class="tema-promedio" data-rating="{{ tema.promedio }}">{{ tema.promedio or '—' }}</div>
-      <div class="tema-votos">{{ tema.total_ratings }} voto{{ 's' if tema.total_ratings != 1 else '' }}</div>
-    </div>
     {% if tema.mi_rating %}
-    <div class="tema-mi-rating">Tu nota: <strong data-rating="{{ tema.mi_rating }}">{{ tema.mi_rating }}</strong></div>
+    <div class="tema-stats">
+      <div class="tema-promedio" data-rating="{{ tema.mi_rating }}">{{ tema.mi_rating }}</div>
+      <div class="tema-votos">Tu nota</div>
+    </div>
     {% else %}
     <div class="tema-sin-rating">Sin calificar</div>
     {% endif %}
@@ -51,27 +72,20 @@
 {% else %}
 <div class="empty-state">
   <i class="ti ti-music-off"></i>
-  <p>No hay {{ "openings" if tipo == "OP" else "endings" }} aún. <a href="{{ url_for('agregar') }}">Agrega el primero</a></p>
+  <p>No hay temas aún. <a href="{{ url_for('agregar') }}">Agrega el primero</a></p>
 </div>
 {% endif %}
 
 <script>
 const inputBusqueda = document.getElementById('buscar-tema');
-
 inputBusqueda.addEventListener('input', function() {
   const q = this.value.toLowerCase().trim();
   const filas = document.querySelectorAll('.tema-row');
-
   filas.forEach(fila => {
     const anime = fila.querySelector('.tema-anime')?.textContent.toLowerCase() || '';
     const cancion = fila.querySelector('.tema-cancion')?.textContent.toLowerCase() || '';
     const tipo = fila.querySelector('.actividad-tipo')?.textContent.toLowerCase() || '';
-
-    if (!q || anime.includes(q) || cancion.includes(q) || tipo.includes(q)) {
-      fila.style.display = 'flex';
-    } else {
-      fila.style.display = 'none';
-    }
+    fila.style.display = (!q || anime.includes(q) || cancion.includes(q) || tipo.includes(q)) ? 'flex' : 'none';
   });
 
   const visibles = [...filas].filter(f => f.style.display !== 'none');
@@ -86,11 +100,5 @@ inputBusqueda.addEventListener('input', function() {
   }
   noResults.style.display = visibles.length === 0 ? 'block' : 'none';
 });
-
-function limpiarBusqueda() {
-  inputBusqueda.value = '';
-  inputBusqueda.dispatchEvent(new Event('input'));
-  inputBusqueda.focus();
-}
 </script>
 {% endblock %}

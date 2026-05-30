@@ -34,11 +34,8 @@
   <a href="{{ url_for('index') }}" class="sidebar-item {% if request.endpoint == 'index' %}active{% endif %}">
     <i class="ti ti-home"></i> Inicio
   </a>
-  <a href="{{ url_for('temas', tipo='OP') }}" class="sidebar-item {% if request.endpoint == 'temas' and request.args.get('tipo', 'OP') == 'OP' %}active{% endif %}">
-    <i class="ti ti-player-play"></i> Openings
-  </a>
-  <a href="{{ url_for('temas', tipo='ED') }}" class="sidebar-item {% if request.endpoint == 'temas' and request.args.get('tipo') == 'ED' %}active{% endif %}">
-    <i class="ti ti-player-pause"></i> Endings
+  <a href="{{ url_for('temas') }}" class="sidebar-item {% if request.endpoint == 'temas' %}active{% endif %}">
+  <i class="ti ti-music"></i> OP & ED
   </a>
   <a href="{{ url_for('rankings') }}" class="sidebar-item {% if request.endpoint == 'rankings' %}active{% endif %}">
     <i class="ti ti-trophy"></i> Rankings
